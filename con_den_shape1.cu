@@ -370,6 +370,9 @@ int main(int argc, char **argv){
     int convDims = convH * convW;
     int convSize = convDims * sizeof(float);
     float *h_convolved = new float[convDims];
+    for(int i=0; i<convDims; i++){
+            h_convolved[i] = 0.0;
+    }
     
     // create device array that can hold pixel intensity values in GPU GM
     float *d_img;
@@ -384,9 +387,6 @@ int main(int argc, char **argv){
     struct timeval starttime, endtime;
     double elapsed = 0.0;
     for (int i = 0; i<10000; i++){
-        for(int i=0; i<convDims; i++){
-            h_convolved[i] = 0.0;
-        }
         gettimeofday(&starttime,NULL);
         // call the kernel
         compute_gpu_tiled<<<nB, nT>>>(d_img, d_convolved, blcH, blcW, imgH, imgW, imgN, k, convH, convW);
