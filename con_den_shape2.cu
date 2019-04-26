@@ -158,8 +158,9 @@ int main(int argc, char **argv){
         gettimeofday(&endtime,NULL);
         elapsed = elapsed + ((endtime.tv_sec-starttime.tv_sec)*1000000 + endtime.tv_usec-starttime.tv_usec)/1000000.0;
         cudaMemcpy(h_convolved, d_convolved, convSize, cudaMemcpyDeviceToHost);
-        cudaDeviceReset();
+        
     }
+    cudaDeviceReset();
     printf("Input imgH: %d imgW: %d imgN: %d\n", &imgH, &imgW, &imgN);
     printf("Tile width: %d height: %d\n", &blcW, &blcH);
     printf("Block number: %d, block size: %d \n", &nB, &nT);
