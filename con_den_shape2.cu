@@ -63,7 +63,7 @@ int compute_naive_tiled(float *img, float *f, float * out, int bh, int bw, int i
             }
         }
     }
-    
+    return 0;
     
 }
 
@@ -89,7 +89,7 @@ __global__ void compute_gpu(float *img, float *out, int bh, int bw, int imgH, in
                     for (int fj=0; fj<imgN; fj++){
                         inf += fj;
                         inm += fj;
-                        out[ind] += img[inm+imgg]*f[inf];
+                        out[ind] += img[inm+imgg]*filter[inf];
                     }
                 }
             }
@@ -146,12 +146,12 @@ int main(int argc, char **argv){
     
     struct timeval starttime, endtime;
     double elapsed = 0.0;
-    for (int i = 0; i<100; i++){
+    for (int i = 0; i<10000; i++){
         gettimeofday(&starttime,NULL);
         // call the kernel
         compute_gpu<<<nB, nT>>>(d_img, d_convolved, blcH, blcW, imgH, imgW, imgN, k, convH, convW)
         gettimeofday(&endtime,NULL);
-        elapsed += ((endtime.tv_sec-starttime.tv_sec)*1000000 + endtime.tv_usec-starttime.tv_usec)/1000000.0;
+        elapsed = elapsed + ((endtime.tv_sec-starttime.tv_sec)*1000000 + endtime.tv_usec-starttime.tv_usec)/1000000.0;
         cudaDeviceReset();
     }
     printf("Input imgH: %d imgW: %d imgN: %d\n", &imgH, &imgW, &imgN);
