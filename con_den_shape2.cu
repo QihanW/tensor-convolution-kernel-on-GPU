@@ -143,6 +143,11 @@ int main(int argc, char **argv){
     // create device array that can hold pixel intensity values in GPU GM
     float *d_img;
     float *d_convolved;
+    cudaMalloc((void **) &d_img, imgSize);
+    cudaMemcpy(d_img, h_img, imgSize, cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol(cm, filter, filterSize);
+    cudaMalloc((void **) &d_convolved, convSize);
+    cudaMemcpy(d_convolved, h_convolved, convSize, cudaMemcpyHostToDevice);
     
     struct timeval starttime, endtime;
     double elapsed = 0.0;
@@ -152,6 +157,7 @@ int main(int argc, char **argv){
         compute_gpu<<<nB, nT>>>(d_img, d_convolved, blcH, blcW, imgH, imgW, imgN, k, convH, convW)
         gettimeofday(&endtime,NULL);
         elapsed = elapsed + ((endtime.tv_sec-starttime.tv_sec)*1000000 + endtime.tv_usec-starttime.tv_usec)/1000000.0;
+        cudaMemcpy(h_convolved, d_convolved, convSize, cudaMemcpyDeviceToHost);
         cudaDeviceReset();
     }
     printf("Input imgH: %d imgW: %d imgN: %d\n", &imgH, &imgW, &imgN);
