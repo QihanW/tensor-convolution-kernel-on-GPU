@@ -1,5 +1,3 @@
-#ifndef TACO_C_HEADERS
-#define TACO_C_HEADERS
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
@@ -12,23 +10,6 @@
 #define BLCH 8
 #define BLCW 32
 
-#define TACO_MIN(_a,_b) ((_a) < (_b) ? (_a) : (_b))
-#define TACO_MAX(_a,_b) ((_a) > (_b) ? (_a) : (_b))
-#ifndef TACO_TENSOR_T_DEFINED
-#define TACO_TENSOR_T_DEFINED
-typedef enum { taco_mode_dense, taco_mode_sparse } taco_mode_t;
-typedef struct {
-  int      order;         // tensor order (number of modes)
-  int*     dimensions;    // tensor dimensions
-  int      csize;         // component size
-  int*     mode_ordering; // mode storage ordering
-  taco_mode_t* mode_types;    // mode storage types
-  int***   indices;       // tensor index data (per mode)
-  float*     vals;          // tensor values
-  int      vals_size;     // values array size
-} taco_tensor_t;
-#endif
-#endif
 
 __constant__ float filter[K*K];
 
