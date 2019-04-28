@@ -161,9 +161,9 @@ int main(int argc, char **argv){
     
     cudaMemcpy(h_convolved, d_convolved, convSize, cudaMemcpyDeviceToHost);
     cudaDeviceReset();
-    printf("Input imgH: %d imgW: %d imgN: %d\n", &imgH, &imgW, &imgN);
-    printf("Tile width: %d height: %d\n", &blcW, &blcH);
-    printf("Block number: %d, block size: %d \n", &nB, &nT);
+    printf("Input imgH: %d imgW: %d imgN: %d\n", imgH, imgW, imgN);
+    printf("Tile width: %d height: %d\n", blcW, blcH);
+    printf("Block number: %d, block size: %d \n", nB, nT);
     printf("time: %f \n", elapsed);
     delete h_img;
     delete h_convolved;
