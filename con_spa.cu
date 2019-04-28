@@ -22,10 +22,10 @@ int compute_csr(float *img_csr, float *f, float * out, int *pos, int *coor, int 
         imgg = i * imgW * imgH;
         //Visit input image by csr
         for (int pi = 0; pi<imgH; pi++){
-            ind1 = pos[pi+k*(imgH+1)];
-            ind2 = pos[pi+1+k*(imgH+1)];
+            ind1 = pos[pi+i*(imgH+1)];
+            ind2 = pos[pi+1+i*(imgH+1)];
             for(int ci = ind1; ci<ind2; ci++){
-                pj = coor[ci+k*num];
+                pj = coor[ci+i*num];
                 float value = img_csr[ci+imgg];
                 //For every element, compute all filters
                 for (int fi = pi-nF+1; fi<=pi; fi++){
@@ -82,10 +82,10 @@ __global__ void compute_gpu_csr(float *img_csr, float * out, int *pos, int *coor
         imgg = i * imgW * imgH;
         //Visit input image by csr
         if(pi<imgH){
-            ind1 = pos[pi+k*(imgH+1)];
-            ind2 = pos[pi+1+k*(imgH+1)];
+            ind1 = pos[pi+i*(imgH+1)];
+            ind2 = pos[pi+1+i*(imgH+1)];
             for(int ci = ind1; ci<ind2; ci++){
-                pj = coor[ci+k*num];
+                pj = coor[ci+i*num];
                 float value = img_csr[ci+imgg];
                 //For every element, compute all filters
                 for (int fi = pi-nF+1; fi<=pi; fi++){
@@ -165,7 +165,7 @@ int main(int argc, char **argv){
                 
                 }
             }
-            pos[i] = index;
+            pos[i] = index_p;
         }
     }
     
@@ -189,22 +189,19 @@ int main(int argc, char **argv){
     }
     
     // create device array that can hold pixel intensity values in GPU GM
-    float *d_img;
     float *d_img_csr;
     float *d_convolved;
     int *d_pos;
     int *d_coor;
-    cudaMalloc((void **) &d_img, imgSize);
-    cudaMemcpy(d_img, h_img, imgSize, cudaMemcpyHostToDevice);
     cudaMemcpyToSymbol(filter, f, filterSize);
     cudaMalloc((void **) &d_convolved, convSize);
     cudaMemcpy(d_convolved, h_convolved, convSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_img_csr, csrimgSize);
     cudaMemcpy(d_img_csr, h_imgcsr, csrimgSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_pos, csrposSize);
-    cudaMemcpy(d_pos, h_pos, csrposSize, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_pos, pos, csrposSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_coor, csrcooSize);
-    cudaMemcpy(d_coor, h_coor, csrcooSize, cudaMemcpyHostToDevice);
+    cudaMemcpy(d_coor, coor, csrcooSize, cudaMemcpyHostToDevice);
     
     struct timeval starttime, endtime;
     double elapsed = 0.0;
@@ -212,7 +209,7 @@ int main(int argc, char **argv){
         gettimeofday(&starttime,NULL);
         // call the kernel
         //compute_gpu<<<nB, nT>>>(d_img, d_convolved, blcH, blcW, imgH, imgW, imgN, k, convH, convW);
-        compute_gpu_csr<<<nB, nT>>>(d_img, d_convolved, d_pos, d_coor, num, blcH, blcW, imgH, imgW, imgN, k, convH, convW);
+        compute_gpu_csr<<<nB, nT>>>(d_img_csr, d_convolved, d_pos, d_coor, num, blcH, blcW, imgH, imgW, imgN, k, convH, convW);
         gettimeofday(&endtime,NULL);
         elapsed += ((endtime.tv_sec-starttime.tv_sec)*1000000 + endtime.tv_usec-starttime.tv_usec)/1000000.0;
     }
