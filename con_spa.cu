@@ -173,9 +173,9 @@ int main(int argc, char **argv){
     // create filter and copy to constant memory
     int filterDims = k * k;
     int filterSize = filterDims * sizeof(float);
-    float *filter = new float[filterDims];
+    float *f = new float[filterDims];
     for(int i=0; i<filterDims; i++){
-        filter[i] = (float)(rand()%10485)/10485;
+        f[i] = (float)(rand()%10485)/10485;
     }
     
     // create host and device array that holds the convoluted matrix
@@ -196,7 +196,7 @@ int main(int argc, char **argv){
     int *d_coor;
     cudaMalloc((void **) &d_img, imgSize);
     cudaMemcpy(d_img, h_img, imgSize, cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(cm, filter, filterSize);
+    cudaMemcpyToSymbol(filter, f, filterSize);
     cudaMalloc((void **) &d_convolved, convSize);
     cudaMemcpy(d_convolved, h_convolved, convSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_img_csr, csrimgSize);
@@ -205,7 +205,6 @@ int main(int argc, char **argv){
     cudaMemcpy(d_pos, h_pos, csrposSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_coor, csrcooSize);
     cudaMemcpy(d_coor, h_coor, csrcooSize, cudaMemcpyHostToDevice);
-
     
     struct timeval starttime, endtime;
     double elapsed = 0.0;
@@ -216,13 +215,14 @@ int main(int argc, char **argv){
         compute_gpu_csr<<<nB, nT>>>(d_img, d_convolved, d_pos, d_coor, num, blcH, blcW, imgH, imgW, imgN, k, convH, convW);
         gettimeofday(&endtime,NULL);
         elapsed += ((endtime.tv_sec-starttime.tv_sec)*1000000 + endtime.tv_usec-starttime.tv_usec)/1000000.0;
-        cudaMemcpy(h_convolved, d_convolved, convSize, cudaMemcpyDeviceToHost);
     }
+    
+    cudaMemcpy(h_convolved, d_convolved, convSize, cudaMemcpyDeviceToHost);
     cudaDeviceReset();
     printf("Input imgH: %d imgW: %d imgN: %d\n", imgH, imgW, imgN);
     printf("Tile width: %d height: %d\n", blcW, blcH);
     printf("Block number: %d, block size: %d \n", nB, nT);
-    printf("time: %f \n", &elapsed);
+    printf("time: %f \n", elapsed);
     delete h_img;
     delete h_convolved;
     delete pos;
