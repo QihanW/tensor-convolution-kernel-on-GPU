@@ -68,7 +68,33 @@ int compute_csr(float *img, float *f_csr, int *pos, int *coor, float * out, int 
     return 0;
 }
 
+__global__ void compute_gpu(float *img, float *f, float * out, int bh, int bw, int imgH, int imgW, int imgN, int nF, int convH, int convW){
+    int idY = blockDim.y * blockIdx.y + threadIdx.y;
+    int idX = blockDim.x * blockIdx.x + threadIdx.x;
+    
+    int inm1, inm2, inm3, inm4, inf, ind1, ind2, ind3;
+    inm1 = 0;
+    inf = 0;
+    ind1 = 0;
 
+    for (int mi = 0; mi < imgN; mi++){
+        ind1 += convW * convH;
+        inm1 += imgW * imgH;
+        if (idX < convH && idY < convW){
+            ind2 = ind1 + convW * idX;
+            inm2 = inm1 + imgW * idX;
+            ind3 = ind2 + idY;
+            inm3 = inm2 + idY;
+            for (int fi = 0; fi < nF; fi++){
+               inm4 = inm3 + imgW * fi;
+               inf = ind3*nF*nF + fi*nF;
+               for (int fj = 0; fj < nF; fj++){
+                  out[ind3] += img[inm4+fj] * f[inf+fj];
+               }
+             }
+         }
+    }
+}
 
 __global__ void compute_gpu_csr(float *img, float *f_csr, int *pos, int *coor, float *out, int bh, int bw, int imgH, int imgW, int imgN, int nF, int convH, int convW){
     
@@ -158,19 +184,20 @@ int main(int argc, char **argv){
     float *h_fcsr = new float[num];
     int csrposSize = (k+1)*convDims*sizeof(int);
     int csrcooSize = num*sizeof(int);
+    int fSize = num*sizeof(float);
     for(int ki=0; ki<convDims; ki++){
-        pos[0+ki*convDims] = 0;
+        pos[0+ki*(k+1)] = 0;
         int index_p=0;
-        int z = ki*convDims;
-        for(int i=0; i<nF; i++){
-            for (int j=0; j<nF; j++){
-                if (filter[i*nF+j+z] != 0){
-                    coor[index_p+k] = j;
-                    h_fcsr[index_p+k] = filter[i*nF+j+z];
+        int z = ki*k*k;
+        for(int i=0; i<k; i++){
+            for (int j=0; j<k; j++){
+                if (filter[i*k+j+z] != 0){
+                    coor[index_p] = j;
+                    h_fcsr[index_p] = filter[i*k+j+z];
                     index_p++;
                 }
             }
-            pos[i] = index_p;
+        pos[i+1+ki*(k+1)] = index_p;
         }
     }
 
@@ -181,7 +208,8 @@ int main(int argc, char **argv){
     float *d_filter;
     int *d_pos;
     int *d_coor;
-    cudaMemcpyToSymbol(d_filter, h_fcsr, filterSize);
+    cudaMalloc((void **) &d_filter, fSize);
+    cudaMemcpyToSymbol(d_filter, h_fcsr, fSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_convolved, convSize);
     cudaMemcpy(d_convolved, h_convolved, convSize, cudaMemcpyHostToDevice);
     cudaMalloc((void **) &d_img, imgSize);
@@ -210,8 +238,8 @@ int main(int argc, char **argv){
     printf("time: %f \n", elapsed);
     delete h_img;
     delete h_convolved;
-    delete h_pos;
+    delete pos;
     delete h_fcsr;
-    delete h_coor;
+    delete coor;
     return 0;
 }
